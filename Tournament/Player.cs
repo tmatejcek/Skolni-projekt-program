@@ -11,15 +11,25 @@ public class Player
     {
         try
         {
-            if (playerList.Contains(name))
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Jméno hráče nemůže být prázdné.");
+            }
+            else if (!name.All(char.IsLetter))
+            {
+                throw new ArgumentException("Jméno hráče může obsahovat pouze písmena.");
+            }
+            else if (playerList.Contains(name))
             {
                 Console.WriteLine("Hráč " + name + " již je v turnaji.");
-                return;
             }
-
-            playerList.Add(name);
+            else
+            {
+                playerList.Add(name);
+                Console.WriteLine("Hráč " + name + " byl přidán do turnaje.");
+            }
         }
-        catch (Exception exception)
+        catch (ArgumentException exception)
         {
             Console.WriteLine("Nepodařilo se přidat hráče: " + exception.Message);
         }
@@ -27,12 +37,13 @@ public class Player
 
     public static void RemovePlayer(string name)
     {
-        if (!playerList.Remove(name))
+        if (!playerList.Contains(name))
         {
             Console.WriteLine("Hráč " + name + " není v turnaji.");
         }
         else
         {
+            playerList.Remove(name);
             Console.WriteLine("Hráč " + name + " byl odstraněn z turnaje.");
         }
     }
