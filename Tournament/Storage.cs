@@ -55,7 +55,10 @@ public class Storage
         lines.Insert(0, Header);
         lines.Add($"KONEC|{count}");
 
-        // TODO later (step 9): write to path + ".tmp" first, then File.Move(..., overwrite: true)
+        string tmp = path + ".tmp";
+        File.WriteAllLines(tmp, lines, Encoding.UTF8);
+        File.Move(tmp, path, true);
+        
         File.WriteAllLines(path, lines, Encoding.UTF8);
     }
 
@@ -70,9 +73,17 @@ public class Storage
 
         string[] lines = File.ReadAllLines(path, Encoding.UTF8);
 
-        // TODO (step 11): check that the first line == Header
-        // TODO (step 11): check the last line is KONEC|count and the count matches
-
+        if (lines.Length == 0 || lines[0] != Header)
+            throw new StorageException(1, "not a tournament save file");
+        
+        string[] end = lines[lines.Length - 1].Split('|');
+        if (end.Length != 2 || end[0] != "KONEC")
+            throw new StorageException(lines.Length, "file is incomplete (missing KONEC)");
+        if (!int.TryParse(end[1], out int expectedCount))
+            throw new StorageException(lines.Length, "KONEC count must be a number");
+        
+        int records = 0;
+        
         for (int i = 0; i < lines.Length; i++)
         {
             string line = lines[i];
@@ -80,6 +91,7 @@ public class Storage
 
             if (line == "" || line.StartsWith("#") || line == Header || line.StartsWith("KONEC|"))
                 continue;
+            records++;
 
             string[] f = line.Split('|');
 
@@ -137,6 +149,10 @@ public class Storage
                     throw new StorageException(lineNumber, $"unknown record type '{f[0]}'");
             }
         }
+
+        if (records != expectedCount)
+            throw new StorageException(lines.Length, $"expected {expectedCount} records, found {records}");
+            
 
         return data;
     }
