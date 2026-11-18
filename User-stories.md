@@ -139,7 +139,7 @@ Jako vývojář chci vlastní textový formát (bez JSON/XML knihoven), abych se
 Jako pořadatel chci, aby program nespadl při špatném vstupu (text místo čísla, číslo mimo rozsah, prázdný vstup), abych se mohl překlepnout bez následků.
 - Program vypíše srozumitelnou chybu a zeptá se znovu.
 
-**US-26 – Ochrana před nekonzistentním stavem**
+**US-26 – Ochrana před nepovoleným stavem**
 Jako pořadatel chci, aby program nedovolil nesmyslné operace (hráč v kole dvakrát, přihlášení do rozehraného turnaje, uzavření kola bez výsledků), aby data zůstala vždy správná.
 
 **US-27 – Přehledné menu**
