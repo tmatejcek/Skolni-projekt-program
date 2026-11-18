@@ -21,7 +21,6 @@ public class Storage
     {
         var lines = new List<string>();
 
-        // Example: players are done, do the rest the same way.
         foreach (var p in data.Players)
             lines.Add($"HRAC|{p.Nickname}|{p.Name}");
         
@@ -48,8 +47,6 @@ public class Storage
 
         foreach (var p in data.Byes)
             lines.Add($"VOLNY|{p.Round}|{p.Nickname}");
-            
-        
 
         int count = lines.Count;            // number of records, before adding header/footer
         lines.Insert(0, Header);
@@ -58,8 +55,6 @@ public class Storage
         string tmp = path + ".tmp";
         File.WriteAllLines(tmp, lines, Encoding.UTF8);
         File.Move(tmp, path, true);
-        
-        File.WriteAllLines(path, lines, Encoding.UTF8);
     }
 
     // ---------- LOAD ----------
@@ -97,7 +92,6 @@ public class Storage
 
             switch (f[0])
             {
-                // Example: players are done, do the rest the same way.
                 case "HRAC":
                     if (f.Length != 3) throw new StorageException(lineNumber, "HRAC needs 3 fields");
                     data.Players.Add(new PlayerRecord(f[1], f[2]));
