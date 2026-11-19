@@ -5,7 +5,26 @@ public class Player
 {
     private static readonly List<string> playerList = [];
 
+    public Player(string nickname, string name)
+    {
+        Nickname = nickname;
+        Name = name;
+    }
+
+    public Player(string name)
+    {
+        Nickname = name;
+        Name = name;
+    }
+
+    public string Nickname { get; set; }
     public string Name { get; set; }
+
+    public static void AddPlayer()
+    {
+        string name = Input.ReadText("Jméno hráče: ");
+        AddPlayer(name);
+    }
 
     public static void AddPlayer(string name)
     {
@@ -15,11 +34,15 @@ public class Player
             {
                 throw new ArgumentException("Jméno hráče nemůže být prázdné.");
             }
-            else if (!name.All(char.IsLetter))
+            else if (name.Contains("|"))
             {
-                throw new ArgumentException("Jméno hráče může obsahovat pouze písmena.");
+                throw new ArgumentException("Jméno hráče nesmí obsahovat znak '|'.");
             }
-            else if (playerList.Contains(name))
+            else if (!name.All(character => char.IsLetter(character) || char.IsWhiteSpace(character)))
+            {
+                throw new ArgumentException("Jméno hráče může obsahovat pouze písmena a mezery.");
+            }
+            else if (playerList.Contains(name, StringComparer.OrdinalIgnoreCase))
             {
                 Console.WriteLine("Hráč " + name + " již je v turnaji.");
             }
@@ -35,16 +58,38 @@ public class Player
         }
     }
 
+    public static void RemovePlayer()
+    {
+        string name = Input.ReadText("Jméno hráče: ");
+        if (!playerList.Contains(name, StringComparer.OrdinalIgnoreCase))
+        {
+            RemovePlayer(name);
+            return;
+        }
+
+        if (Input.ReadYesNo("Opravdu chcete odebrat hráče " + name + "? (a/n): "))
+        {
+            RemovePlayer(name);
+        }
+        else
+        {
+            Console.WriteLine("Odebrání hráče bylo zrušeno.");
+        }
+    }
+
     public static void RemovePlayer(string name)
     {
-        if (!playerList.Contains(name))
+        string? existingName = playerList.FirstOrDefault(
+            player => string.Equals(player, name, StringComparison.OrdinalIgnoreCase));
+
+        if (existingName == null)
         {
             Console.WriteLine("Hráč " + name + " není v turnaji.");
         }
         else
         {
-            playerList.Remove(name);
-            Console.WriteLine("Hráč " + name + " byl odstraněn z turnaje.");
+            playerList.Remove(existingName);
+            Console.WriteLine("Hráč " + existingName + " byl odstraněn z turnaje.");
         }
     }
     
