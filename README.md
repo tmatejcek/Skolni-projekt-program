@@ -3,7 +3,11 @@
 Konzolový program pro řízení školního turnaje: hráči, kola, výsledky, tabulka, uložení a načtení.
 Viz [SPECIFIKACE.md](SPECIFIKACE.md), [NAVRH.md](NAVRH.md), [User-stories.md](User-stories.md).
 
+Turnajová pravidla jsou oddělená od konzolového rozhraní; tabulka se počítá z uložených výsledků při každém zobrazení.
+
 **Spuštění:** .NET 10, v Rideru spustit projekt `Tournament` (nebo `dotnet run` ve složce `Tournament`).
+
+**Integrační kontroly:** `dotnet run --project Tournament.Tests/Tournament.Tests.csproj`
 
 ## Větve
 

@@ -1,23 +1,29 @@
 # Návrh programu
 
-Program je rozdělený na dvě části:
+Program je konzolová aplikace rozdělená podle odpovědností:
 
-- **Interní (business) logika:** (`Player`, `Match`, `Round`, `Tournament`, `Standings`, `Storage`) – drží data a hlídá pravidla turnaje. Neobsahuje `Console.WriteLine` ani `Console.ReadLine`. Chyby se hlásí pomocí výjimek.
-- **Uživatelské rozhraní:** (`Program`, `Input`) – čte vstup z klávesnice, volá interní logiku, zachytává výjimky a vypisuje výsledky.
+- **Uživatelské rozhraní:** (`Program`, `Input`) – zobrazuje menu a čte vstupy. `Program` předává příkazy doménové vrstvě a zobrazuje její výsledky nebo chyby.
+- **Turnajová logika:** (`Tournament`, `Standings`) – kontroluje pravidla a mění stav turnaje; `Standings` počítá pořadí bez ukládání výsledné tabulky.
+- **Ukládání:** (`SaveData`, `Storage`) – drží záznamy v paměti a převádí je do vlastního textového formátu a zpět.
+
+Turnajová logika nepracuje s konzolí. Chyby pravidel předává uživatelskému rozhraní jako `TournamentException`.
 
 ## Seznam tříd
 
 Formát: třída – co drží
 
 - **Player** – přezdívka (`Nickname`, jedinečný identifikátor), jméno (`Name`)
-- **Match** – hráč 1, hráč 2, výsledek (`MatchResult`: `Win1`, `Win2`, `Draw`, `None`)
+- **Match** – hráč 1, hráč 2, výsledek (`MatchResult`: `Player1Win`, `Player2Win`, `Draw`, `None`)
 - **Round** – číslo kola, seznam zápasů, hráč s volným losem (nebo `null`), příznak `IsClosed`
-- **Tournament** – název, disciplína, počet kol, seznam všech hráčů, seznam přihlášených hráčů, seznam kol
-- **Standings** – řádky tabulky (pořadí, hráč, body, počet odehraných zápasů)
+- **Tournament** – příkazy pro správu hráčů, registrace, kol, zápasů a jejich výsledků; kontroluje pravidla turnaje nad stavem `SaveData`
+- **Standings** – vypočítá seřazené řádky tabulky z přihlášených hráčů, výsledků a volných losů
+- **StandingRow** – pozice, přezdívka, počet odehraných zápasů a body jednoho hráče
 - **SaveData** – seznamy záznamů `PlayerRecord`, `TournamentRecord`, `RoundRecord`, `MatchRecord`, `ByeRecord` (obsah souboru v paměti)
 - **Storage** – cestu k souboru
 - **Input** – nic (jen metody pro čtení vstupu)
-- **Program** – aktuální turnaj
+- **Program** – menu, vstup a výstup konzole; předává příkazy `Tournament` a zobrazuje řádky z `Standings`
+
+`SaveData` a jeho záznamy jsou současně reprezentací, kterou ukládá `Storage`. `Player`, `Match` a `Round` představují doménové typy; příkazy aktuálně pracují se záznamy v `SaveData`, aby zůstalo načítání a ukládání přímočaré.
 
 ## Formát ukládání
 
@@ -48,7 +54,7 @@ Počet v `KONEC` je počet záznamů mezi hlavičkou a patičkou (bez komentář
 
 ### Zakázaný znak `|`
 
-`|` je oddělovač polí, proto ho žádný text nesmí obsahovat. Hlídá to `Input`, takže řádek jde při načítání rozdělit jednoduše přes `Split('|')`.
+`|` je oddělovač polí, proto ho žádný text nesmí obsahovat. Kontrolují to příkazy při zadávání textu, takže řádek jde při načítání rozdělit jednoduše přes `Split('|')`.
 
 ### Ukázka souboru
 
@@ -69,26 +75,34 @@ KONEC|10
 
 ### Typ záznamu, oddělování, vyhledávání, duplicity
 
-- **Typ záznamu:** určuje ho první pole řádku. Každý řádek je samostatný, takže poškozený řádek nerozbije ostatní.
+- **Typ záznamu:** určuje ho první pole řádku. Neplatný nebo nekonzistentní záznam způsobí odmítnutí celého souboru; data se nenačítají částečně.
 - **Oddělování:** záznamy jsou oddělené novým řádkem, pole znakem `|`.
-- **Vyhledávání:** v souboru se nevyhledává. Načte se jednou při startu a hráči se drží v `Dictionary` podle přezdívky.
+- **Vyhledávání:** při provedení příkazu se načte celý soubor a záznamy se prohledávají v paměti podle přezdívky.
 - **Duplicity:** každý hráč je uložený jen jednou, ostatní záznamy na něj odkazují přezdívkou. Duplicitní záznam znamená poškozený soubor.
 
 ### Co se neukládá
 
-Tabulka a stav turnaje se neukládají, protože se dají vždy dopočítat. Volný los se ukládá, aby staré turnaje zůstaly správně i při změně pravidel.
+Tabulka se neukládá, protože se při zobrazení vždy přepočítá z výsledků. Turnaj, kola, zápasy, výsledky a volné losy se ukládají.
 
 ## Načítání
 
 - Když soubor chybí, program začne s prázdným stavem.
 - Kontroluje se hlavička, `KONEC` a počet záznamů, takže se pozná cizí nebo useknutý soubor.
 - U každého řádku se kontroluje počet polí, čísla a povolené hodnoty.
-- Při chybě se nenačte nic a `Storage` vyhodí `StorageException` s číslem řádku.
-- Z `SaveData` se turnaj sestaví přes metody `Tournament`, takže pravidla se kontrolují na jednom místě.
+- Při chybě formátu nebo nekonzistentních/duplicitních záznamech se nenačte nic. Poškozený soubor se přejmenuje na `.poskozeny` (při kolizi dostane číselnou příponu), aplikace upozorní pořadatele a začne s prázdnými daty.
+- Kontrolují se unikátní přezdívky hráčů, registrace, čísla kol a zápasů, odkazy na existující hráče a kola i jediné zařazení hráče v kole.
 
 ## Ukládání
 
 Data se zapíšou do `*.tmp` a ten se pak přejmenuje na cílový soubor. Když program spadne uprostřed zápisu, původní soubor zůstane celý.
+
+## Aktuální konzolové funkce
+
+Menu umožňuje založit jeden turnaj, evidovat a přihlásit hráče, vytvářet kola a ručně zadávat zápasy, přidělovat volné losy, zaznamenávat výsledky, uzavírat kola a zobrazovat průběžnou tabulku. Přehled turnaje ukazuje název, disciplínu, plánovaný počet kol, přihlášené hráče a aktuální kolo. Výpis zápasů se provádí pro zvolené kolo.
+
+Kolo lze vytvořit jen s alespoň dvěma přihlášenými hráči. Při lichém počtu hráčů musí mít právě jeden hráč volný los. Volný los se přednostně přiděluje hráči s nejmenším počtem předchozích volných losů; opakování je povoleno, pokud už žádný dostupný hráč nemá méně předchozích volných losů. Kolo lze uzavřít až po zařazení všech hráčů právě jednou a zadání všech výsledků.
+
+Integrační testy konzolového programu se spouštějí příkazem `dotnet run --project Tournament.Tests/Tournament.Tests.csproj`.
 
 ## Proč tento formát
 
