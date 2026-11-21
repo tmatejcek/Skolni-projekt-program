@@ -40,7 +40,8 @@ public static class Input
                 throw new EndOfStreamException("Vstup byl ukončen.");
             }
 
-            if (int.TryParse(input, out int number) && number >= minimum && number <= maximum)
+            int number;
+            if (int.TryParse(input, out number) && number >= minimum && number <= maximum)
             {
                 return number;
             }
