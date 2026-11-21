@@ -77,6 +77,45 @@ public static class Program
         }
     }
 
+    private static string GetActionName(int choice)
+    {
+        switch (choice)
+        {
+            case 1:
+                return "Zaregistrovat hráče";
+            case 2:
+                return "Odebrat hráče";
+            case 3:
+                return "Zobrazit hráče";
+            case 4:
+                return "Založit turnaj";
+            case 5:
+                return "Přihlásit hráče do turnaje";
+            case 6:
+                return "Odhlásit hráče z turnaje";
+            case 7:
+                return "Vytvořit nové kolo";
+            case 8:
+                return "Určit dvojice kola";
+            case 9:
+                return "Přiřadit volný los";
+            case 10:
+                return "Zadat nebo opravit výsledek zápasu";
+            case 11:
+                return "Uzavřít kolo";
+            case 12:
+                return "Zobrazit zápasy kola";
+            case 13:
+                return "Zobrazit tabulku";
+            case 14:
+                return "Přehled turnaje";
+            case 15:
+                return "Ukončit program";
+            default:
+                return "Neznámá volba";
+        }
+    }
+
     private static SaveData LoadData()
     {
         SaveData data = storage.Load();
@@ -95,11 +134,19 @@ public static class Program
         {
             action();
             storage.Save(data);
-            Console.WriteLine(successMessage);
+            Console.WriteLine("Hotovo: " + successMessage);
         }
         catch (TournamentException exception)
         {
-            Console.WriteLine(exception.Message);
+            Console.WriteLine("Akce se neprovedla: " + exception.Message);
+        }
+        catch (IOException exception)
+        {
+            Console.WriteLine("Změnu se nepodařilo uložit: " + exception.Message);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            Console.WriteLine("K souboru s daty není povolen přístup: " + exception.Message);
         }
     }
 
@@ -113,7 +160,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.AddPlayer(nickname, name),
-            "Hráč " + name + " byl přidán.");
+            "Hráč " + name + " (" + nickname + ") byl přidán do evidence.");
     }
 
     private static void RemovePlayer()
@@ -130,7 +177,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.RemovePlayer(nickname),
-            "Hráč " + nickname + " byl odebrán.");
+            "Hráč " + nickname + " byl odebrán z evidence.");
     }
 
     private static void ListPlayers()
@@ -142,7 +189,7 @@ public static class Program
             return;
         }
 
-        Console.WriteLine("Seznam hráčů:");
+        Console.WriteLine("Hráči v evidenci:");
         foreach (PlayerRecord player in data.Players)
         {
             Console.WriteLine(player.Nickname + " - " + player.Name);
@@ -160,7 +207,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.CreateTournament(name, discipline, roundCount),
-            "Turnaj byl založen.");
+            "Turnaj " + name + " (" + discipline + ") byl založen na " + roundCount + " kol.");
     }
 
     private static void RegisterPlayer()
@@ -208,7 +255,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.AddMatchPair(player1, player2),
-            "Zápas byl vytvořen.");
+            "Zápas " + player1 + " proti " + player2 + " byl přidán do otevřeného kola.");
     }
 
     private static void AssignBye()
@@ -220,7 +267,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.AssignBye(nickname),
-            "Hráči " + nickname + " byl přidělen volný los.");
+            "Hráči " + nickname + " byl přidělen volný los v otevřeném kole.");
     }
 
     private static void SetMatchResult()
@@ -242,12 +289,23 @@ public static class Program
             result = MatchResult.Player2Win;
         }
 
+        string resultDescription = "remíza";
+        if (choice == 1)
+        {
+            resultDescription = "výhra prvního hráče";
+        }
+        else if (choice == 2)
+        {
+            resultDescription = "výhra druhého hráče";
+        }
+
         SaveData data = LoadData();
         Tournament tournament = new Tournament(data);
         SaveAfterAction(
             data,
             () => tournament.SetMatchResult(roundNumber, matchNumber, result),
-            "Výsledek zápasu byl uložen.");
+            "Výsledek zápasu " + matchNumber + " v kole " + roundNumber +
+            " byl nastaven: " + resultDescription + ".");
     }
 
     private static void CloseRound()
@@ -271,6 +329,7 @@ public static class Program
             return;
         }
 
+        Console.WriteLine("Přehled turnaje:");
         Console.WriteLine("Název turnaje: " + data.Tournament.Name);
         Console.WriteLine("Disciplína: " + data.Tournament.Discipline);
         Console.WriteLine("Počet kol: " + data.Tournament.RoundCount);
@@ -318,6 +377,7 @@ public static class Program
             return;
         }
 
+        Console.WriteLine("Průběžná tabulka:");
         Console.WriteLine("Pořadí | Přezdívka | Odehrané zápasy | Body");
         foreach (StandingRow row in rows)
         {
@@ -348,7 +408,7 @@ public static class Program
         }
 
         Console.WriteLine(
-            $"Kolo {selectedRound.Number} — " +
+            $"Zápasy kola {selectedRound.Number} — " +
             (selectedRound.IsClosed ? "uzavřené" : "otevřené"));
 
         bool hasEntries = false;
