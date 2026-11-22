@@ -102,8 +102,6 @@ Menu umožňuje založit jeden turnaj, evidovat a přihlásit hráče, vytváře
 
 Kolo lze vytvořit jen s alespoň dvěma přihlášenými hráči. Při lichém počtu hráčů musí mít právě jeden hráč volný los. Volný los se přednostně přiděluje hráči s nejmenším počtem předchozích volných losů; opakování je povoleno, pokud už žádný dostupný hráč nemá méně předchozích volných losů. Kolo lze uzavřít až po zařazení všech hráčů právě jednou a zadání všech výsledků.
 
-Integrační testy konzolového programu se spouštějí příkazem `dotnet run --project Tournament.Tests/Tournament.Tests.csproj`.
-
 ## Proč tento formát
 
-Je čitelný pro člověka, jednoduchý na parsování a odolný proti poškození. Jde rozšířit o nové typy záznamů a verze v hlavičce odliší staré soubory. Diakritika i mezery zůstávají beze změny, což ověřil test uložit → načíst → uložit.
+Je čitelný pro člověka, jednoduchý na parsování a odolný proti poškození. Jde rozšířit o nové typy záznamů a verze v hlavičce odliší staré soubory. Diakritika i mezery zůstávají beze změny.

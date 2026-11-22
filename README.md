@@ -5,9 +5,9 @@ Viz [SPECIFIKACE.md](SPECIFIKACE.md), [NAVRH.md](NAVRH.md), [User-stories.md](Us
 
 Turnajová pravidla jsou oddělená od konzolového rozhraní; tabulka se počítá z uložených výsledků při každém zobrazení.
 
-**Spuštění:** .NET 10, v Rideru spustit projekt `Tournament` (nebo `dotnet run` ve složce `Tournament`).
+**Spuštění:** Nainstalujte .NET 10 a spusťte z kořenové složky příkaz `dotnet run --project Tournament\Tournament.csproj`.
 
-**Integrační kontroly:** `dotnet run --project Tournament.Tests/Tournament.Tests.csproj`
+Soubor `Skolni-projekt-program.slnx` sdružuje projekt aplikace do jednoho řešení pro Visual Studio nebo VS Code.
 
 ## Větve
 

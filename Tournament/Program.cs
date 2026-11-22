@@ -9,14 +9,14 @@ public static class Program
             Console.WriteLine(
                 "\nCo chcete udělat?\n" +
                 "1. Zaregistrovat hráče\n" +
-                "2. Odebrat hráče\n" +
-                "3. Zobrazit hráče\n" +
+                "2. Odebrat hráče z evidence\n" +
+                "3. Zobrazit hráče v evidenci\n" +
                 "4. Založit turnaj\n" +
                 "5. Přihlásit hráče do turnaje\n" +
                 "6. Odhlásit hráče z turnaje\n" +
                 "7. Vytvořit nové kolo\n" +
-                "8. Určit dvojice kola\n" +
-                "9. Přiřadit volný los\n" +
+                "8. Přidat zápas do kola\n" +
+                "9. Přidělit volný los hráči\n" +
                 "10. Zadat nebo opravit výsledek zápasu\n" +
                 "11. Uzavřít kolo\n" +
                 "12. Zobrazit zápasy kola\n" +
@@ -84,9 +84,9 @@ public static class Program
             case 1:
                 return "Zaregistrovat hráče";
             case 2:
-                return "Odebrat hráče";
+                return "Odebrat hráče z evidence";
             case 3:
-                return "Zobrazit hráče";
+                return "Zobrazit hráče v evidenci";
             case 4:
                 return "Založit turnaj";
             case 5:
@@ -96,9 +96,9 @@ public static class Program
             case 7:
                 return "Vytvořit nové kolo";
             case 8:
-                return "Určit dvojice kola";
+                return "Přidat zápas do kola";
             case 9:
-                return "Přiřadit volný los";
+                return "Přidělit volný los hráči";
             case 10:
                 return "Zadat nebo opravit výsledek zápasu";
             case 11:
@@ -207,7 +207,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.CreateTournament(name, discipline, roundCount),
-            "Turnaj " + name + " (" + discipline + ") byl založen na " + roundCount + " kol.");
+            "Turnaj " + name + " (" + discipline + ") byl založen. Počet kol: " + roundCount + ".");
     }
 
     private static void RegisterPlayer()
@@ -267,7 +267,7 @@ public static class Program
         SaveAfterAction(
             data,
             () => tournament.AssignBye(nickname),
-            "Hráči " + nickname + " byl přidělen volný los v otevřeném kole.");
+            "Volný los byl přidělen hráči s přezdívkou " + nickname + " v otevřeném kole.");
     }
 
     private static void SetMatchResult()
