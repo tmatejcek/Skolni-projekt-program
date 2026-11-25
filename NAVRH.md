@@ -1,29 +1,37 @@
 # Návrh programu
 
-Program je konzolová aplikace rozdělená podle odpovědností:
+Program je rozdělený na dvě části:
 
-- **Uživatelské rozhraní:** (`Program`, `Input`) – zobrazuje menu a čte vstupy. `Program` předává příkazy doménové vrstvě a zobrazuje její výsledky nebo chyby.
-- **Turnajová logika:** (`Tournament`, `Standings`) – kontroluje pravidla a mění stav turnaje; `Standings` počítá pořadí bez ukládání výsledné tabulky.
-- **Ukládání:** (`SaveData`, `Storage`) – drží záznamy v paměti a převádí je do vlastního textového formátu a zpět.
+- **Interní (business) logika:** (`SaveData`, `Tournament`, `Standings`, `Storage`) – drží data a hlídá pravidla turnaje. Neobsahuje `Console.WriteLine` ani `Console.ReadLine`. Chyby se hlásí pomocí výjimek.
+- **Uživatelské rozhraní:** (`Program`, `Input`) – čte vstup z klávesnice, volá interní logiku, zachytává výjimky a vypisuje výsledky.
 
-Turnajová logika nepracuje s konzolí. Chyby pravidel předává uživatelskému rozhraní jako `TournamentException`.
+Všechna data turnaje jsou v jednom objektu `SaveData`. `Tournament` je mění podle pravidel, `Standings` z nich počítá tabulku a `Storage` je převádí do souboru a zpět.
 
 ## Seznam tříd
 
 Formát: třída – co drží
 
-- **Player** – přezdívka (`Nickname`, jedinečný identifikátor), jméno (`Name`)
-- **Match** – hráč 1, hráč 2, výsledek (`MatchResult`: `Player1Win`, `Player2Win`, `Draw`, `None`)
-- **Round** – číslo kola, seznam zápasů, hráč s volným losem (nebo `null`), příznak `IsClosed`
-- **Tournament** – příkazy pro správu hráčů, registrace, kol, zápasů a jejich výsledků; kontroluje pravidla turnaje nad stavem `SaveData`
-- **Standings** – vypočítá seřazené řádky tabulky z přihlášených hráčů, výsledků a volných losů
-- **StandingRow** – pozice, přezdívka, počet odehraných zápasů a body jednoho hráče
-- **SaveData** – seznamy záznamů `PlayerRecord`, `TournamentRecord`, `RoundRecord`, `MatchRecord`, `ByeRecord` (obsah souboru v paměti)
-- **Storage** – cestu k souboru
-- **Input** – nic (jen metody pro čtení vstupu)
-- **Program** – menu, vstup a výstup konzole; předává příkazy `Tournament` a zobrazuje řádky z `Standings`
+- **SaveData** – seznamy záznamů `PlayerRecord`, `RoundRecord`, `MatchRecord`, `ByeRecord`, seznam přezdívek přihlášených hráčů a jeden `TournamentRecord` (nebo `null`, když turnaj není založen). Každý záznam odpovídá jednomu řádku souboru.
+- **Tournament** – objekt `SaveData`, nad kterým pracuje. Má metody pro hráče, turnaj, kola, zápasy, volné losy, výsledky a uzavření kola a hlídá všechna pravidla (např. hráč nejvýše jednou v kole, přihlašování jen před 1. kolem).
+- **Standings** – nic (statická třída). Metoda `Calculate(SaveData)` spočítá tabulku.
+- **StandingRow** – jeden řádek tabulky: pořadí, přezdívka, počet odehraných zápasů, body.
+- **Storage** – cestu k souboru a případnou hlášku o poškozeném souboru (`LastRecoveryMessage`).
+- **MatchResult** – výčet výsledků zápasu: `Player1Win`, `Player2Win`, `Draw`, `None`.
+- **TournamentException** – zprávu o porušení pravidla turnaje.
+- **StorageException** – číslo řádku a důvod chyby v souboru.
+- **Input** – nic (jen metody pro bezpečné čtení textu, čísla v rozsahu, volby z menu a ano/ne).
+- **Program** – objekt `Storage` se souborem `turnaj.txt`; obsahuje menu.
 
-`SaveData` a jeho záznamy jsou současně reprezentací, kterou ukládá `Storage`. `Player`, `Match` a `Round` představují doménové typy; příkazy aktuálně pracují se záznamy v `SaveData`, aby zůstalo načítání a ukládání přímočaré.
+## Průběh jedné akce
+
+Každá volba v menu proběhne stejně:
+
+1. `Input` načte vstup od uživatele.
+2. `Storage.Load()` načte aktuální data ze souboru.
+3. `Tournament` provede změnu (nebo vyhodí `TournamentException`).
+4. `Storage.Save()` data hned uloží.
+
+Program tak jde kdykoli vypnout a po zapnutí pokračuje tam, kde skončil.
 
 ## Formát ukládání
 
@@ -54,7 +62,7 @@ Počet v `KONEC` je počet záznamů mezi hlavičkou a patičkou (bez komentář
 
 ### Zakázaný znak `|`
 
-`|` je oddělovač polí, proto ho žádný text nesmí obsahovat. Kontrolují to příkazy při zadávání textu, takže řádek jde při načítání rozdělit jednoduše přes `Split('|')`.
+`|` je oddělovač polí, proto ho žádný text nesmí obsahovat. Hlídá to `Tournament` u přezdívky, jména, názvu turnaje i disciplíny, takže řádek jde při načítání rozdělit jednoduše přes `Split('|')`.
 
 ### Ukázka souboru
 
@@ -75,33 +83,29 @@ KONEC|10
 
 ### Typ záznamu, oddělování, vyhledávání, duplicity
 
-- **Typ záznamu:** určuje ho první pole řádku. Neplatný nebo nekonzistentní záznam způsobí odmítnutí celého souboru; data se nenačítají částečně.
+- **Typ záznamu:** určuje ho první pole řádku. Každý řádek je samostatný, takže poškozený řádek nerozbije ostatní.
 - **Oddělování:** záznamy jsou oddělené novým řádkem, pole znakem `|`.
-- **Vyhledávání:** při provedení příkazu se načte celý soubor a záznamy se prohledávají v paměti podle přezdívky.
-- **Duplicity:** každý hráč je uložený jen jednou, ostatní záznamy na něj odkazují přezdívkou. Duplicitní záznam znamená poškozený soubor.
+- **Vyhledávání:** v souboru se nevyhledává. Soubor se načte celý do seznamů v paměti a hráč se hledá průchodem seznamu podle přezdívky. Pro turnaj školního klubu (desítky hráčů) je to dostatečně rychlé a kód zůstává jednoduchý.
+- **Duplicity:** každý hráč je uložený jen jednou, ostatní záznamy na něj odkazují přezdívkou. Duplicitám se brání už při zadávání: `Tournament` odmítne stejnou přezdívku, dvojí přihlášení i hráče dvakrát v jednom kole. Přezdívky se porovnávají bez ohledu na velikost písmen.
 
 ### Co se neukládá
 
-Tabulka se neukládá, protože se při zobrazení vždy přepočítá z výsledků. Turnaj, kola, zápasy, výsledky a volné losy se ukládají.
+Tabulka a stav turnaje se neukládají, protože se dají vždy dopočítat (tabulku počítá `Standings`, turnaj je rozehraný, když existuje aspoň jedno kolo). Volný los se ukládá, aby staré turnaje zůstaly správně i při změně pravidel.
 
 ## Načítání
 
-- Když soubor chybí, program začne s prázdným stavem.
+`Load` se skládá ze dvou částí: `LoadFile` soubor čte a kontroluje, `Load` kolem něj dělá ochranu proti poškozenému souboru.
+
+- Když soubor chybí, program začne s prázdnými daty.
 - Kontroluje se hlavička, `KONEC` a počet záznamů, takže se pozná cizí nebo useknutý soubor.
-- U každého řádku se kontroluje počet polí, čísla a povolené hodnoty.
-- Při chybě formátu nebo nekonzistentních/duplicitních záznamech se nenačte nic. Poškozený soubor se přejmenuje na `.poskozeny` (při kolizi dostane číselnou příponu), aplikace upozorní pořadatele a začne s prázdnými daty.
-- Kontrolují se unikátní přezdívky hráčů, registrace, čísla kol a zápasů, odkazy na existující hráče a kola i jediné zařazení hráče v kole.
+- U každého řádku se kontroluje počet polí, čísla (kladná), neprázdné texty a povolené hodnoty. Turnaj smí být jen jeden a hráč nesmí hrát sám proti sobě.
+- Při chybě `LoadFile` vyhodí `StorageException` s číslem řádku. `Load` ji zachytí, poškozený soubor přejmenuje na `turnaj.txt.poskozeny` (případně `.poskozeny.1` atd.), aby ho další uložení nepřepsalo, a vrátí prázdná data.
+- Hlášku pro uživatele `Storage` jen připraví. Vypíše ji `Program`, který si ji vezme přes `TakeRecoveryMessage()`.
 
 ## Ukládání
 
 Data se zapíšou do `*.tmp` a ten se pak přejmenuje na cílový soubor. Když program spadne uprostřed zápisu, původní soubor zůstane celý.
 
-## Aktuální konzolové funkce
-
-Menu umožňuje založit jeden turnaj, evidovat a přihlásit hráče, vytvářet kola a ručně zadávat zápasy, přidělovat volné losy, zaznamenávat výsledky, uzavírat kola a zobrazovat průběžnou tabulku. Přehled turnaje ukazuje název, disciplínu, plánovaný počet kol, přihlášené hráče a aktuální kolo. Výpis zápasů se provádí pro zvolené kolo.
-
-Kolo lze vytvořit jen s alespoň dvěma přihlášenými hráči. Při lichém počtu hráčů musí mít právě jeden hráč volný los. Volný los se přednostně přiděluje hráči s nejmenším počtem předchozích volných losů; opakování je povoleno, pokud už žádný dostupný hráč nemá méně předchozích volných losů. Kolo lze uzavřít až po zařazení všech hráčů právě jednou a zadání všech výsledků.
-
 ## Proč tento formát
 
-Je čitelný pro člověka, jednoduchý na parsování a odolný proti poškození. Jde rozšířit o nové typy záznamů a verze v hlavičce odliší staré soubory. Diakritika i mezery zůstávají beze změny.
+Je čitelný pro člověka, jednoduchý na parsování a odolný proti poškození. Jde rozšířit o nové typy záznamů a verze v hlavičce odliší staré soubory. Diakritika i mezery zůstávají beze změny, což ověřil test uložit → načíst → uložit.
