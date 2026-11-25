@@ -77,45 +77,6 @@ public static class Program
         }
     }
 
-    private static string GetActionName(int choice)
-    {
-        switch (choice)
-        {
-            case 1:
-                return "Zaregistrovat hráče";
-            case 2:
-                return "Odebrat hráče z evidence";
-            case 3:
-                return "Zobrazit hráče v evidenci";
-            case 4:
-                return "Založit turnaj";
-            case 5:
-                return "Přihlásit hráče do turnaje";
-            case 6:
-                return "Odhlásit hráče z turnaje";
-            case 7:
-                return "Vytvořit nové kolo";
-            case 8:
-                return "Přidat zápas do kola";
-            case 9:
-                return "Přidělit volný los hráči";
-            case 10:
-                return "Zadat nebo opravit výsledek zápasu";
-            case 11:
-                return "Uzavřít kolo";
-            case 12:
-                return "Zobrazit zápasy kola";
-            case 13:
-                return "Zobrazit tabulku";
-            case 14:
-                return "Přehled turnaje";
-            case 15:
-                return "Ukončit program";
-            default:
-                return "Neznámá volba";
-        }
-    }
-
     private static SaveData LoadData()
     {
         SaveData data = storage.Load();
